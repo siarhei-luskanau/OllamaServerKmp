@@ -1,0 +1,39 @@
+package template.ui.main
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.KoinViewModel
+import org.koin.core.annotation.Provided
+import template.core.common.DispatcherSet
+import template.core.pref.PrefService
+
+@KoinViewModel
+class MainViewModel(
+    @InjectedParam private val initArg: String,
+    @Provided private val navigationCallback: MainNavigationCallback,
+    @Provided private val dispatcherSet: DispatcherSet,
+    @Provided private val prefService: PrefService,
+) : ViewModel() {
+    val viewState: StateFlow<MainViewState>
+        field = MutableStateFlow<MainViewState>(MainViewState.Loading)
+
+    init {
+        viewModelScope.launch(dispatcherSet.defaultDispatcher()) {
+            prefService.getKey().collect { pref ->
+                viewState.value = MainViewState.Success(data = "initArg=$initArg pref=$pref")
+            }
+        }
+    }
+
+    fun onEvent(event: MainViewEvent) {
+        viewModelScope.launch {
+            when (event) {
+                MainViewEvent.NavigateBack -> viewModelScope.launch { navigationCallback.goBack() }
+            }
+        }
+    }
+}
