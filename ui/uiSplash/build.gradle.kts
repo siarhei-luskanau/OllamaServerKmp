@@ -4,7 +4,7 @@ plugins {
 }
 
 kotlin {
-    android.namespace = "template.ui.splash"
+    android.namespace = "io.ollama.server.ui.splash"
     sourceSets {
         commonMain.dependencies {
             implementation(projects.core.coreCommon)

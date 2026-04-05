@@ -1,6 +1,6 @@
 import androidx.compose.ui.window.ComposeUIViewController
+import io.ollama.server.di.KoinApp
 import platform.UIKit.UIViewController
-import template.di.KoinApp
 
 fun mainViewController(): UIViewController =
     ComposeUIViewController {

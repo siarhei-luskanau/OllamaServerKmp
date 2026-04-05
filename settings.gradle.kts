@@ -4,8 +4,13 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 include(
     ":app:androidApp",
     ":core:coreCommon",
+    ":core:coreOllama",
     ":core:corePref",
+    ":core:coreServer",
     ":diApp",
+    ":feature:featureChat",
+    ":feature:featureModels",
+    ":feature:featureServer",
     ":navigation",
     ":ui:uiCommon",
     ":ui:uiMain",
