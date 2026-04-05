@@ -1,4 +1,4 @@
-rootProject.name = "compose-multiplatform-template"
+rootProject.name = "ollama-server-kmp"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(
