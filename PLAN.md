@@ -1,4 +1,4 @@
-# OllamaServerKmp — Implementation Plan
+# OllamaServerKmp - Implementation Plan
 
 ## Research Summary
 
@@ -46,7 +46,7 @@ Responses stream as newline-delimited JSON (NDJSON) with `"done": false` until f
 | Ollama integration | **None** (submodule present, not integrated) |
 | Android Service | **None** |
 | Ollama submodule | Present at `ollama/` (commit `4589fa2`), Dependabot-managed |
-| App ID / name | `template.compose.multiplatform` / "CMP template" |
+| App ID / name | `io.ollama.server.compose.multiplatform` / "CMP template" |
 
 **Module graph:**
 ```
@@ -66,24 +66,24 @@ iosApp     ─┤
 
 ## Critical Platform Difference: Android vs iOS
 
-> **Verified technical constraints — researched against Ktor docs, Apple Developer Forums, and llama.cpp issues.**
+> **Verified technical constraints - researched against Ktor docs, Apple Developer Forums, and llama.cpp issues.**
 
 | | Android | iOS |
 |--|---------|-----|
-| Execute arbitrary binary (subprocess) | ✅ Yes (from filesDir) | ❌ No — `fork()`/`exec()`/`posix_spawn()` blocked at **kernel level** (EPERM), not just policy |
-| Run in-process HTTP server | ✅ Yes | ✅ Yes — POSIX socket `bind()`/`listen()` IS allowed; GCDWebServer proves this |
-| Ktor CIO server | ✅ Yes (JVM) | ✅ Yes — `ktor-server-iosarm64` artifact exists; CIO engine uses POSIX sockets |
-| llama.cpp inference | ✅ CPU only (no Vulkan compute) | ✅ Metal GPU-accelerated — best-in-class on Apple Silicon |
-| Loopback server needs special permission | N/A | ✅ No — `127.0.0.1` exempt from Local Network permission prompt |
-| App Store allows localhost server | N/A | ✅ Yes — GCDWebServer ships in App Store apps; foreground use is fine |
-| **Server works in background** | ✅ Via ForegroundService | ❌ **Hard limit** — app suspends after ~5s in background; TCP server freezes |
-| HTTPS on embedded server | ✅ | ❌ — Ktor native does not support TLS; HTTP-only (fine for loopback) |
+| Execute arbitrary binary (subprocess) | ✅ Yes (from filesDir) | ❌ No - `fork()`/`exec()`/`posix_spawn()` blocked at **kernel level** (EPERM), not just policy |
+| Run in-process HTTP server | ✅ Yes | ✅ Yes - POSIX socket `bind()`/`listen()` IS allowed; GCDWebServer proves this |
+| Ktor CIO server | ✅ Yes (JVM) | ✅ Yes - `ktor-server-iosarm64` artifact exists; CIO engine uses POSIX sockets |
+| llama.cpp inference | ✅ CPU only (no Vulkan compute) | ✅ Metal GPU-accelerated - best-in-class on Apple Silicon |
+| Loopback server needs special permission | N/A | ✅ No - `127.0.0.1` exempt from Local Network permission prompt |
+| App Store allows localhost server | N/A | ✅ Yes - GCDWebServer ships in App Store apps; foreground use is fine |
+| **Server works in background** | ✅ Via ForegroundService | ❌ **Hard limit** - app suspends after ~5s in background; TCP server freezes |
+| HTTPS on embedded server | ✅ | ❌ - Ktor native does not support TLS; HTTP-only (fine for loopback) |
 
 ### Android approach
 Launch the pre-compiled `ollama` Go binary as a subprocess inside a `ForegroundService`.
 Same as the sunshine0523/OllamaServer reference implementation. IPC via HTTP on `127.0.0.1:11434`.
 
-### iOS approach — Embedded In-Process Server (feasible, foreground-only)
+### iOS approach - Embedded In-Process Server (feasible, foreground-only)
 iOS **cannot** execute the Go ollama binary (kernel blocks `exec()`). But iOS **can** run a Ktor
 CIO HTTP server in-process while the app is in the foreground:
 
@@ -94,26 +94,26 @@ iOS App Process
             └── llama.cpp (static XCFramework, Metal GPU)
 ```
 
-This is **not client-only**. The iOS app IS the server — it just runs inference in the same
+This is **not client-only**. The iOS app IS the server - it just runs inference in the same
 process rather than as a subprocess. The same Ollama-compatible HTTP API is exposed on
 `http://127.0.0.1:11434`, making the commonMain client code identical for both platforms.
 
 **The one hard constraint on iOS:** when the user backgrounds the app, iOS suspends it after
 ~5 seconds. The Ktor server stops accepting connections until the app returns to foreground.
-This is an architectural reality to communicate to users — not a technical blocker.
+This is an architectural reality to communicate to users - not a technical blocker.
 
 ---
 
 ## Clarifying Questions (to resolve before implementation)
 
 > iOS server mode is **resolved**: iOS will embed an in-process Ktor CIO server with llama.cpp
-> (foreground-only). Client-only is not the target — see Phase 3.
+> (foreground-only). Client-only is not the target - see Phase 3.
 
 1. **Android binary delivery**: The ollama binary is 50–200 MB, exceeding Google Play's 150 MB APK limit.
    Options: (a) side-load / direct APK only, (b) Play Asset Delivery (PAD), (c) download at first launch.
 
 2. **Model download**: Should the app allow pulling models via Ollama API (`POST /api/pull`),
-   or are models pre-bundled? Pre-bundling is impractical — download strongly recommended.
+   or are models pre-bundled? Pre-bundling is impractical - download strongly recommended.
 
 3. **Network exposure**: Bind to `127.0.0.1` only (secure) or optionally `0.0.0.0:11434`
    (LAN-visible) as a toggle? LAN mode useful for using the phone as a server for a PC client.
@@ -136,7 +136,7 @@ This is an architectural reality to communicate to users — not a technical blo
 
 ## Implementation Plan
 
-### Phase 0 — Project Setup (non-breaking, foundation)
+### Phase 0 - Project Setup (non-breaking, foundation)
 
 #### 0.1 Rename App Identity
 - Change `applicationId` from `template.compose.multiplatform` to `io.ollama.server` (or similar)
@@ -169,7 +169,7 @@ include(":feature:featureChat")   // Chat/generate UI
 
 ---
 
-### Phase 1 — Common API Layer (`:core:coreOllama`)
+### Phase 1 - Common API Layer (`:core:coreOllama`)
 
 **Location:** `core/coreOllama/`
 
@@ -214,7 +214,7 @@ class OllamaApiClientImpl(private val baseUrl: String) : OllamaApiClient {
 
 ---
 
-### Phase 2 — Android Server Implementation (`:core:coreServer`, androidMain)
+### Phase 2 - Android Server Implementation (`:core:coreServer`, androidMain)
 
 #### 2.1 Build the Ollama Binary
 
@@ -314,9 +314,9 @@ class AndroidOllamaServerController(private val context: Context) : OllamaServer
 
 ---
 
-### Phase 3 — iOS Implementation (`:core:coreServer`, iosMain)
+### Phase 3 - iOS Implementation (`:core:coreServer`, iosMain)
 
-> iOS CAN run a local server — just in-process, not as a subprocess.
+> iOS CAN run a local server - just in-process, not as a subprocess.
 > Verified: Ktor publishes `ktor-server-iosarm64`; POSIX sockets work on iOS; llama.cpp has
 > Metal-accelerated iOS support. Foreground-only is the hard constraint.
 
@@ -329,14 +329,14 @@ ktor-server-cio  = { module = "io.ktor:ktor-server-cio",  version.ref = "ktor" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 ```
 
-These are added to `iosMain` only — Android uses the subprocess approach and does not need an
+These are added to `iosMain` only - Android uses the subprocess approach and does not need an
 in-process server.
 
 #### 3.2 Build llama.cpp as XCFramework
 
 The built-in llama.cpp HTTP server (`tools/server`) fails to compile for iOS due to an
 `httplib.h` Objective-C++ interop issue ([#10371](https://github.com/ggml-org/llama.cpp/issues/10371)).
-Only the **inference library** is needed — we provide our own Ktor HTTP server.
+Only the **inference library** is needed - we provide our own Ktor HTTP server.
 
 Build script `scripts/build_llamacpp_ios.sh`:
 ```bash
@@ -441,9 +441,9 @@ class IosOllamaServerController : OllamaServerController {
 
 ---
 
-### Phase 4 — UI Modules
+### Phase 4 - UI Modules
 
-#### 4.1 `:feature:featureServer` — Server Control Screen
+#### 4.1 `:feature:featureServer` - Server Control Screen
 
 - Shows server status (Running / Stopped / Starting)
 - Start/Stop button
@@ -451,14 +451,14 @@ class IosOllamaServerController : OllamaServerController {
 - Server log tail (last N lines from stdout)
 - iOS: shows a text field to enter remote server URL
 
-#### 4.2 `:feature:featureModels` — Model Management Screen
+#### 4.2 `:feature:featureModels` - Model Management Screen
 
 - Lists installed models (name, size, quantization)
 - Pull new model by name (with streaming download progress bar)
 - Delete model with confirmation dialog
 - Shows disk usage
 
-#### 4.3 `:feature:featureChat` — Chat/Generate Screen
+#### 4.3 `:feature:featureChat` - Chat/Generate Screen
 
 - Model selector dropdown
 - Chat message list with streaming token display
@@ -468,7 +468,7 @@ class IosOllamaServerController : OllamaServerController {
 
 ---
 
-### Phase 5 — Navigation & DI Wiring
+### Phase 5 - Navigation & DI Wiring
 
 Update `:navigation` to include new routes:
 ```kotlin
@@ -497,7 +497,7 @@ class OllamaModule {
 
 ---
 
-### Phase 6 — Binary Distribution Strategy
+### Phase 6 - Binary Distribution Strategy
 
 **Problem:** The ollama binary (~100 MB) exceeds Google Play's 150 MB AAB limit for base APK.
 
@@ -517,7 +517,7 @@ class OllamaModule {
 
 ---
 
-### Phase 7 — Testing Strategy
+### Phase 7 - Testing Strategy
 
 | Layer | Test type | Framework |
 |-------|-----------|-----------|
@@ -549,9 +549,9 @@ class OllamaModule {
 
 ### Open Architecture Decisions (need answers before M1)
 
-1. **Android binary delivery** — Play Asset Delivery, direct APK, or download-on-first-run?
-2. **Network exposure** — localhost-only (`127.0.0.1`) or toggleable LAN exposure (`0.0.0.0`)?
-3. **Port conflict** — fixed 11434 or auto-detect next free port?
-4. **App identity** — final package name / app name?
-5. **Android background persistence** — server stays running after app closes (via a persistent ForegroundService), or stops when the user leaves the app?
-6. **iOS background UX** — show a visible "Server paused" banner when the iOS app goes to background, or silently pause/resume?
+1. **Android binary delivery** - Play Asset Delivery, direct APK, or download-on-first-run?
+2. **Network exposure** - localhost-only (`127.0.0.1`) or toggleable LAN exposure (`0.0.0.0`)?
+3. **Port conflict** - fixed 11434 or auto-detect next free port?
+4. **App identity** - final package name / app name?
+5. **Android background persistence** - server stays running after app closes (via a persistent ForegroundService), or stops when the user leaves the app?
+6. **iOS background UX** - show a visible "Server paused" banner when the iOS app goes to background, or silently pause/resume?

@@ -4,7 +4,7 @@ plugins {
 }
 
 kotlin {
-    android.namespace = "template.di.app"
+    android.namespace = "io.ollama.server.di"
     sourceSets {
         commonMain.dependencies {
             implementation(libs.androidx.datastore.core.okio)

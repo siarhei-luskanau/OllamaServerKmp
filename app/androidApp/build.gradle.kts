@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "template.compose.multiplatform"
+    namespace = "io.ollama.server.android"
     compileSdk =
         libs.versions.build.android.compileSdk
             .get()
@@ -21,7 +21,7 @@ android {
             libs.versions.build.android.targetSdk
                 .get()
                 .toInt()
-        applicationId = "template.compose.multiplatform"
+        applicationId = "io.ollama.server.android"
         versionCode = 1
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

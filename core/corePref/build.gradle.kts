@@ -4,7 +4,7 @@ plugins {
 }
 
 kotlin {
-    android.namespace = "template.core.pref"
+    android.namespace = "io.ollama.server.core.pref"
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.serialization.json)

@@ -2,7 +2,7 @@ plugins {
     id("composeMultiplatformConvention")
 }
 
-kotlin.android.namespace = "template.ui.common"
+kotlin.android.namespace = "io.ollama.server.ui.common"
 
 compose.resources {
     publicResClass = true

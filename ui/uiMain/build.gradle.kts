@@ -4,7 +4,7 @@ plugins {
 }
 
 kotlin {
-    android.namespace = "template.ui.main"
+    android.namespace = "io.ollama.server.ui.main"
     sourceSets {
         commonMain.dependencies {
             implementation(projects.core.coreCommon)
