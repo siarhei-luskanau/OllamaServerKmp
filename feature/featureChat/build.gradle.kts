@@ -7,7 +7,6 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.core.coreOllama)
-            implementation(projects.core.coreServer)
         }
     }
 }

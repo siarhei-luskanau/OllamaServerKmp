@@ -6,7 +6,6 @@ include(
     ":core:coreCommon",
     ":core:coreOllama",
     ":core:corePref",
-    ":core:coreServer",
     ":diApp",
     ":feature:featureChat",
     ":feature:featureModels",

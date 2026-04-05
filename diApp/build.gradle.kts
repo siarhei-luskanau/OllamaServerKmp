@@ -9,6 +9,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.androidx.datastore.core.okio)
             implementation(projects.core.coreCommon)
+            implementation(projects.core.coreOllama)
             implementation(projects.core.corePref)
             implementation(projects.navigation)
             implementation(projects.ui.uiCommon)

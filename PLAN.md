@@ -17,8 +17,6 @@ ollama binary (Go)
 Key API endpoints:
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/generate` | Streaming text generation |
-| `POST` | `/api/chat` | Chat completions (OpenAI-compatible) |
 | `GET`  | `/api/tags` | List local models |
 | `POST` | `/api/pull` | Download model from registry |
 | `POST` | `/api/show` | Model metadata |
@@ -144,17 +142,16 @@ This is an architectural reality to communicate to users - not a technical block
 - Update `app_name` string resource from "CMP template" to "Ollama Server"
 
 #### 0.2 Add HTTP Client Dependency
-Add Ktor to `libs.versions.toml` and `convention-plugin-multiplatform`:
+Add to `libs.versions.toml` and `convention-plugin-multiplatform`:
 ```toml
 [versions]
 ktor = "3.1.3"
+koog = "0.7.3"
 
 [libraries]
-ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
-ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
-ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
-ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
-ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+# koog — KMP Ollama client (Android + iOS + JVM + JS + Wasm)
+koog-prompt-executor-ollama = { module = "ai.koog:prompt-executor-ollama-client", version.ref = "koog" }
+
 ```
 
 #### 0.3 Add New Gradle Modules
@@ -164,7 +161,6 @@ include(":core:coreOllama")       // Ollama API models + client
 include(":core:coreServer")       // Server lifecycle management
 include(":feature:featureServer") // Server control UI
 include(":feature:featureModels") // Model management UI
-include(":feature:featureChat")   // Chat/generate UI
 ```
 
 ---
@@ -178,9 +174,6 @@ Define the contracts shared between Android and iOS:
 ```kotlin
 // commonMain
 data class OllamaModel(val name: String, val size: Long, val digest: String)
-data class GenerateRequest(val model: String, val prompt: String, val stream: Boolean = true)
-data class GenerateResponse(val response: String, val done: Boolean)
-data class ChatMessage(val role: String, val content: String)
 data class ServerStatus(val isRunning: Boolean, val port: Int, val pid: Int?)
 
 interface OllamaServerController {
@@ -192,29 +185,55 @@ interface OllamaServerController {
 
 interface OllamaApiClient {
     suspend fun listModels(): List<OllamaModel>
-    suspend fun pullModel(name: String): Flow<PullProgress>
-    suspend fun deleteModel(name: String): Result<Unit>
-    fun generate(request: GenerateRequest): Flow<GenerateResponse>
-    fun chat(model: String, messages: List<ChatMessage>): Flow<ChatMessage>
+    // Pulls if missing via OllamaClient.getModelOrNull(name, pullIfMissing = true)
+    // Returns null if model could not be found/pulled
+    suspend fun pullModel(name: String): OllamaModelCard?
     suspend fun isServerReady(): Boolean
 }
 ```
 
-**Ktor client factory (commonMain):**
-```kotlin
-// Platform-specific HttpClient engine provided via expect/actual
-expect fun createHttpClient(): HttpClient
+**Platform implementations (all in `commonMain` — koog targets Android + iOS + JVM + JS + Wasm):**
 
-// Common client implementation
-class OllamaApiClientImpl(private val baseUrl: String) : OllamaApiClient {
-    private val client = createHttpClient()
-    // ... Ktor calls to http://127.0.0.1:11434/api/...
-}
-```
+| Operation | Implementation | Notes |
+|-----------|----------------|-------|
+| `listModels` | `OllamaClient.getModels()` | koog — commonMain |
+| `pullModel` | `OllamaClient.getModelOrNull(name, pullIfMissing = true)` | koog — commonMain; blocking (no progress stream) |
+| `isServerReady` | `OllamaClient.getModels()` try/catch | koog — commonMain |
+
+> **Note:** [JetBrains/koog](https://github.com/JetBrains/koog) (`ai.koog:prompt-executor-ollama-client`)
+> supports `iosArm64`, `iosSimulatorArm64`, Android, JVM, JS, and WasmJS from `commonMain`.
+> `OllamaClient` covers chat, model listing, and model pulling.
+> `pullModel` via koog is **not streaming** — it blocks until the model is downloaded or returns null.
 
 ---
 
 ### Phase 2 - Android Server Implementation (`:core:coreServer`, androidMain)
+
+#### 2.0 Wire koog Dependency in coreOllama
+
+Add to `core/coreOllama/build.gradle.kts`:
+```kotlin
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.koog.prompt.executor.ollama)
+        }
+        androidMain.dependencies {
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.serialization.kotlinx.json)
+        }
+        appleMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+        }
+    }
+}
+```
+
+> **Scope:** koog `OllamaClient` covers `/api/chat`, `/api/tags`,
+> and `/api/pull` (via `getModelOrNull(name, pullIfMissing = true)`) on **all platforms**.
+> There is **no BOM** for koog — version must be pinned directly on the artifact.
 
 #### 2.1 Build the Ollama Binary
 
@@ -293,41 +312,94 @@ class OllamaForegroundService : Service() {
 
 #### 2.3 OllamaServerController (Android)
 
+Uses koog's `OllamaClient.getModels()` to verify server readiness (replaces manual Ktor polling):
+
 ```kotlin
 // androidMain
 class AndroidOllamaServerController(private val context: Context) : OllamaServerController {
     private val _status = MutableStateFlow(ServerStatus(false, 11434, null))
     override val status = _status.asStateFlow()
 
+    // koog client shared with OllamaApiClientImpl
+    val ollamaClient = OllamaClient(baseUrl = "http://127.0.0.1:11434")
+
     override suspend fun start(): Result<Unit> {
         context.startForegroundService(Intent(context, OllamaForegroundService::class.java))
-        // Poll /api/tags until server responds (max 30s)
         return waitForServerReady()
     }
 
     override suspend fun stop(): Result<Unit> {
         context.stopService(Intent(context, OllamaForegroundService::class.java))
+        _status.value = ServerStatus(isRunning = false, port = 11434, pid = null)
         return Result.success(Unit)
     }
+
+    private suspend fun waitForServerReady(timeoutMs: Long = 30_000): Result<Unit> {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                ollamaClient.getModels()  // succeeds when server is up
+                _status.value = ServerStatus(isRunning = true, port = 11434, pid = null)
+                return Result.success(Unit)
+            } catch (_: Exception) {
+                delay(500)
+            }
+        }
+        return Result.failure(TimeoutException("Ollama server did not start within ${timeoutMs}ms"))
+    }
+}
+```
+
+#### 2.4 OllamaApiClient Implementation (commonMain — koog)
+
+`OllamaApiClientImpl` lives in `commonMain`. koog handles all operations:
+
+```kotlin
+// commonMain
+// Imports from koog:
+// import ai.koog.prompt.executor.ollama.client.OllamaClient
+// import ai.koog.prompt.executor.ollama.client.OllamaModelCard
+// import ai.koog.prompt.llm.LLModel
+// import ai.koog.prompt.message.Prompt
+// import ai.koog.prompt.message.Message
+
+class OllamaApiClientImpl(
+    private val ollamaClient: OllamaClient,  // koog — inference, listing, pulling
+) : OllamaApiClient {
+
+   
+    // --- Model listing via koog ---
+
+    override suspend fun listModels(): List<OllamaModel> =
+        ollamaClient.getModels().map { card ->
+            OllamaModel(name = card.name, size = card.size, digest = "")
+        }
+
+    override suspend fun isServerReady(): Boolean = try {
+        ollamaClient.getModels()
+        true
+    } catch (_: Exception) { false }
+
+    // --- Model pull via koog ---
+    // getModelOrNull with pullIfMissing=true downloads the model from the Ollama registry
+    // if it is not present locally. This call blocks until download completes (no progress stream).
+    // Returns null if the model could not be found or pulled.
+
+    override suspend fun pullModel(name: String): OllamaModelCard? =
+        ollamaClient.getModelOrNull(name, pullIfMissing = true)
+
+    // --- koog handles all operations
+
 }
 ```
 
 ---
 
 ### Phase 3 - iOS Implementation (`:core:coreServer`, iosMain)
-
-> iOS CAN run a local server - just in-process, not as a subprocess.
 > Verified: Ktor publishes `ktor-server-iosarm64`; POSIX sockets work on iOS; llama.cpp has
 > Metal-accelerated iOS support. Foreground-only is the hard constraint.
 
-#### 3.1 Add Ktor Server Dependency
-
-Add to `libs.versions.toml`:
-```toml
-ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
-ktor-server-cio  = { module = "io.ktor:ktor-server-cio",  version.ref = "ktor" }
-ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
-```
+#### 3.1 Add Server Dependency
 
 These are added to `iosMain` only - Android uses the subprocess approach and does not need an
 in-process server.
@@ -406,8 +478,6 @@ class IosOllamaServerController : OllamaServerController {
         val engine = embeddedServer(CIO, port = 11434, host = "127.0.0.1") {
             install(ContentNegotiation) { json() }
             routing {
-                post("/api/generate") { handleGenerate(call) }
-                post("/api/chat")     { handleChat(call) }
                 get("/api/tags")      { handleTags(call) }
                 // ... other endpoints
             }
@@ -421,16 +491,6 @@ class IosOllamaServerController : OllamaServerController {
         server?.stop(gracePeriodMillis = 1000, timeoutMillis = 5000)
         server = null
         _status.value = ServerStatus(isRunning = false, port = 11434, pid = null)
-    }
-
-    private suspend fun handleGenerate(call: ApplicationCall) {
-        val req = call.receive<GenerateRequest>()
-        // Call llama.cpp via cinterop
-        val ctx = llama_init_from_model(loadModel(req.model), llama_context_default_params())
-        // Stream NDJSON tokens back
-        call.respondTextWriter(contentType = ContentType.Application.Json) {
-            // token streaming loop via llama_decode / llama_sampling_sample
-        }
     }
 }
 ```
@@ -455,16 +515,7 @@ class IosOllamaServerController : OllamaServerController {
 
 - Lists installed models (name, size, quantization)
 - Pull new model by name (with streaming download progress bar)
-- Delete model with confirmation dialog
 - Shows disk usage
-
-#### 4.3 `:feature:featureChat` - Chat/Generate Screen
-
-- Model selector dropdown
-- Chat message list with streaming token display
-- Input field + send button
-- Clear conversation button
-- System prompt configuration
 
 ---
 
@@ -476,7 +527,6 @@ sealed class AppRoutes {
     data object Splash : AppRoutes()
     data object Server : AppRoutes()   // NEW
     data object Models : AppRoutes()   // NEW
-    data object Chat : AppRoutes()     // NEW
     data class Settings(...) : AppRoutes() // NEW
 }
 ```
@@ -538,11 +588,9 @@ class OllamaModule {
 | **M2** | Android server | ForegroundService starts/stops ollama subprocess |
 | **M3** | Common API | `coreOllama` module with Ktor client, all Ollama API calls working |
 | **M4** | Model UI | List, pull, delete models on Android |
-| **M5** | Chat UI | Streaming chat working on Android |
 | **M6** | iOS llama.cpp build | llama.cpp XCFramework (arm64 + simulator) with Metal, linked into Xcode project |
 | **M7** | iOS cinterop | Kotlin/Native cinterop bindings to llama.cpp; model loading + basic inference |
 | **M8** | iOS Ktor server | Ktor CIO server in-process on iOS exposing Ollama-compatible API |
-| **M9** | iOS UI | Same chat/model UI working on iOS (foreground-only caveat noted in UI) |
 | **M10** | Binary delivery | Play Asset Delivery or download-on-first-run for Android |
 
 ---
