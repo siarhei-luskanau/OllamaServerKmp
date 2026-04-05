@@ -17,6 +17,7 @@ jetbrains-savedstate = "1.4.0"
 jetbrains-window = "1.5.1"
 koin-bom = "4.2.0"
 koin-plugin = "0.6.2"
+koog = "0.7.3"
 kotlin = "2.3.20"
 kotlinx-coroutines = "1.10.2"
 kotlinx-serialization = "1.10.0"
@@ -56,23 +57,20 @@ koin-compose = { module = "io.insert-koin:koin-compose" }
 koin-compose-navigation3 = { module = "io.insert-koin:koin-compose-navigation3" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
 koin-plugin = { module = "io.insert-koin.compiler.plugin:io.insert-koin.compiler.plugin.gradle.plugin", version.ref = "koin-plugin" }
+koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
+koog-prompt-executor-ollama = { module = "ai.koog:prompt-executor-ollama-client", version.ref = "koog" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
-kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
-ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
-ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
-ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
-ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
-ktor-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
-ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-bom = { module = "io.ktor:ktor-bom", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp" }
 leakcanary-android = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanary" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
-roborazzi-compose-desktop = { module = "io.github.takahirom.roborazzi:roborazzi-compose-desktop", version.ref = "roborazzi" }
 roborazzi-compose-ios = { module = "io.github.takahirom.roborazzi:roborazzi-compose-ios", version.ref = "roborazzi" }
 
 [plugins]

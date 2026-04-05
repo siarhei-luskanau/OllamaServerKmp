@@ -56,6 +56,11 @@ android {
             apiLevel = 35
         }
     }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+        }
+    }
 }
 
 kotlin {

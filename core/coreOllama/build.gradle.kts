@@ -1,21 +1,20 @@
 plugins {
     id("composeMultiplatformConvention")
-    alias(libs.plugins.kotlinx.serialization)
 }
 
 kotlin {
     android.namespace = "io.ollama.server.core.ollama"
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.ktor.core)
-            implementation(libs.ktor.client.content.negotiation)
-            implementation(libs.ktor.serialization.kotlinx.json)
-            implementation(libs.ktor.client.logging)
-            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.koog.agents)
+            implementation(libs.koog.prompt.executor.ollama)
+            implementation(project.dependencies.platform(libs.ktor.bom))
         }
+
         androidMain.dependencies {
-            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.okhttp)
         }
+
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
         }
