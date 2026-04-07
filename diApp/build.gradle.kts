@@ -11,6 +11,8 @@ kotlin {
             implementation(projects.core.coreCommon)
             implementation(projects.core.coreOllama)
             implementation(projects.core.corePref)
+            implementation(projects.feature.featureModels)
+            implementation(projects.feature.featureServer)
             implementation(projects.navigation)
             implementation(projects.ui.uiCommon)
             implementation(projects.ui.uiMain)

@@ -1,5 +1,7 @@
 package io.ollama.server.navigation
 
+import io.ollama.server.feature.models.ModelsScreen
+import io.ollama.server.feature.server.ServerScreen
 import io.ollama.server.ui.main.MainScreen
 import io.ollama.server.ui.splash.SplashScreen
 import org.koin.compose.viewmodel.koinViewModel
@@ -22,5 +24,11 @@ val navigationModule =
         }
         navigation<AppRoutes.Main> { route ->
             MainScreen(viewModel = koinViewModel { parametersOf(route.initArg) })
+        }
+        navigation<AppRoutes.Server> {
+            ServerScreen(viewModel = koinViewModel())
+        }
+        navigation<AppRoutes.Models> {
+            ModelsScreen(viewModel = koinViewModel())
         }
     }
