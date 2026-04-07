@@ -39,6 +39,7 @@ class ServerViewModel(
                 ServerViewEvent.StopServer -> serverController.stop()
                 ServerViewEvent.RestartServer -> serverController.restart()
                 ServerViewEvent.NavigateToModels -> navigationCallback.goModelsScreen()
+                ServerViewEvent.NavigateToSettings -> navigationCallback.goSettingsScreen()
             }
         }
     }

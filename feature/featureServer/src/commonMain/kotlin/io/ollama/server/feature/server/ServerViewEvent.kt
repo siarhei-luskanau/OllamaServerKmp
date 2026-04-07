@@ -8,4 +8,6 @@ sealed interface ServerViewEvent {
     data object RestartServer : ServerViewEvent
 
     data object NavigateToModels : ServerViewEvent
+
+    data object NavigateToSettings : ServerViewEvent
 }
