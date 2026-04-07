@@ -46,6 +46,9 @@ internal fun ServerContent(
                     TextButton(onClick = { onEvent(ServerViewEvent.NavigateToModels) }) {
                         Text("Models")
                     }
+                    TextButton(onClick = { onEvent(ServerViewEvent.NavigateToSettings) }) {
+                        Text("Settings")
+                    }
                 },
             )
         },

@@ -10,6 +10,7 @@ include(
     ":feature:featureChat",
     ":feature:featureModels",
     ":feature:featureServer",
+    ":feature:featureSettings",
     ":navigation",
     ":ui:uiCommon",
     ":ui:uiMain",

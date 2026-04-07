@@ -16,6 +16,7 @@ kotlin {
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(projects.feature.featureModels)
             implementation(projects.feature.featureServer)
+            implementation(projects.feature.featureSettings)
             implementation(projects.ui.uiCommon)
             implementation(projects.ui.uiMain)
             implementation(projects.ui.uiSplash)

@@ -4,20 +4,12 @@ plugins {
 }
 
 kotlin {
-    android.namespace = "io.ollama.server.di"
+    android.namespace = "io.ollama.server.feature.settings"
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.androidx.datastore.core.okio)
             implementation(projects.core.coreCommon)
-            implementation(projects.core.coreOllama)
             implementation(projects.core.corePref)
-            implementation(projects.feature.featureModels)
-            implementation(projects.feature.featureServer)
-            implementation(projects.feature.featureSettings)
-            implementation(projects.navigation)
             implementation(projects.ui.uiCommon)
-            implementation(projects.ui.uiMain)
-            implementation(projects.ui.uiSplash)
         }
 
         androidHostTest.dependencies {
@@ -32,5 +24,4 @@ kotlin {
     }
 }
 
-// Directory for reference images
 roborazzi.outputDir.set(file("src/screenshots"))

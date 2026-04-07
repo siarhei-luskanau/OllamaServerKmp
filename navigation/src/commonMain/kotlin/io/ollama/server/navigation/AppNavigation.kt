@@ -4,6 +4,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.navigation3.runtime.NavKey
 import io.ollama.server.feature.models.ModelsNavigationCallback
 import io.ollama.server.feature.server.ServerNavigationCallback
+import io.ollama.server.feature.settings.SettingsNavigationCallback
 import io.ollama.server.ui.main.MainNavigationCallback
 import io.ollama.server.ui.splash.SplashNavigationCallback
 import org.koin.core.annotation.Single
@@ -13,6 +14,7 @@ internal class AppNavigation :
     MainNavigationCallback,
     ModelsNavigationCallback,
     ServerNavigationCallback,
+    SettingsNavigationCallback,
     SplashNavigationCallback {
     val backStack = mutableStateListOf<NavKey>(AppRoutes.Splash)
 
@@ -29,5 +31,9 @@ internal class AppNavigation :
 
     override fun goModelsScreen() {
         backStack.add(AppRoutes.Models)
+    }
+
+    override fun goSettingsScreen() {
+        backStack.add(AppRoutes.Settings)
     }
 }
