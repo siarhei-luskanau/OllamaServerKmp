@@ -1,4 +1,4 @@
-package io.ollama.server.di
+package io.ollama.server.feature.server
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
@@ -9,13 +9,13 @@ import androidx.compose.ui.test.runComposeUiTest
 import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
-internal class KoinAppCommonTest {
+internal class ServerScreenCommonTest {
     @Test
     fun simpleCheck() =
         runComposeUiTest {
-            setContent { KoinApp() }
+            setContent { ServerScreenPreview() }
             waitForIdle()
             onRoot().printToLog("StartTag")
-            onNodeWithText("Start").assertIsDisplayed()
+            onNodeWithText("Status: Running").assertIsDisplayed()
         }
 }

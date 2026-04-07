@@ -11,4 +11,10 @@ internal sealed interface AppRoutes : NavKey {
     data class Main(
         val initArg: String,
     ) : AppRoutes
+
+    @Serializable
+    data object Server : AppRoutes
+
+    @Serializable
+    data object Models : AppRoutes
 }
