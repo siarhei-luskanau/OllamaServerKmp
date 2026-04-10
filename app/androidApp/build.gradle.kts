@@ -41,7 +41,10 @@ android {
             )
     }
     buildFeatures.compose = true
-    packaging.resources.excludes.add("META-INF/**")
+    packaging {
+        resources.excludes.add("META-INF/**")
+        jniLibs.useLegacyPackaging = true
+    }
     testOptions {
         unitTests {
             all { test: Test ->

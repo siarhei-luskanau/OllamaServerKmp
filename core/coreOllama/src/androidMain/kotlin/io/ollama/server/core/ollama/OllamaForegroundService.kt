@@ -41,9 +41,10 @@ class OllamaForegroundService : Service() {
                 ollamaProcess =
                     ProcessBuilder(binary.absolutePath, "serve")
                         .apply {
-                            environment()["OLLAMA_HOST"] = "127.0.0.1:11434"
+                            environment()["OLLAMA_HOST"] = "0.0.0.0:11434"
                             environment()["OLLAMA_MODELS"] = modelsDir.absolutePath
                             environment()["HOME"] = filesDir.absolutePath
+                            environment()["LD_LIBRARY_PATH"] = applicationInfo.nativeLibraryDir
                             redirectErrorStream(true)
                         }.start()
 
@@ -58,13 +59,9 @@ class OllamaForegroundService : Service() {
     }
 
     private fun prepareOllamaBinary(): java.io.File {
-        val binary = filesDir.resolve("ollama")
-        if (!binary.exists()) {
-            assets.open("arm64-v8a/ollama").use { input ->
-                binary.outputStream().use { output -> input.copyTo(output) }
-            }
-        }
-        binary.setExecutable(true)
+        val nativeLibDir = applicationInfo.nativeLibraryDir
+        val binary = java.io.File(nativeLibDir, "libollama.so")
+        check(binary.exists()) { "ollama binary not found at ${binary.absolutePath}" }
         return binary
     }
 
