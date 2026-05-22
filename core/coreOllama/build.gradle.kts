@@ -7,7 +7,6 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.koog.agents)
-            implementation(libs.koog.prompt.executor.ollama)
             implementation(project.dependencies.platform(libs.ktor.bom))
         }
 

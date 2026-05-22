@@ -1,5 +1,6 @@
 package io.ollama.server.core.ollama
 
+import ai.koog.http.client.ktor.KtorKoogHttpClient
 import ai.koog.prompt.executor.ollama.client.OllamaClient
 
 class OllamaApiClientImpl(
@@ -39,4 +40,5 @@ class OllamaApiClientImpl(
         }
 }
 
-fun provideOllamaApiClient(baseUrl: String): OllamaApiClient = OllamaApiClientImpl(ollamaClient = OllamaClient(baseUrl = baseUrl))
+fun provideOllamaApiClient(baseUrl: String): OllamaApiClient =
+    OllamaApiClientImpl(ollamaClient = OllamaClient(baseUrl = baseUrl, httpClientFactory = KtorKoogHttpClient.Factory()))

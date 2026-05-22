@@ -1,7 +1,6 @@
 package io.ollama.server.core.ollama
 
 import io.ktor.http.ContentType
-import io.ktor.server.application.call
 import io.ktor.server.cio.CIO
 import io.ktor.server.cio.CIOApplicationEngine
 import io.ktor.server.engine.EmbeddedServer
