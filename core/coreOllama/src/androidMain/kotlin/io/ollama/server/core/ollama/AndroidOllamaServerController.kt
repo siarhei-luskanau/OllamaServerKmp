@@ -2,8 +2,6 @@ package io.ollama.server.core.ollama
 
 import android.content.Context
 import android.content.Intent
-import io.ollama.server.core.ollama.OllamaServerController
-import io.ollama.server.core.ollama.ServerStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
