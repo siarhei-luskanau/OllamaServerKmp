@@ -13,10 +13,6 @@ plugins {
 }
 
 kotlin {
-    compilerOptions {
-        freeCompilerArgs.add("-Xexplicit-backing-fields")
-    }
-
     android {
         compilerOptions { jvmTarget = JvmTarget.fromTarget(libs.versions.javaVersion.get()) }
         compileSdk =
