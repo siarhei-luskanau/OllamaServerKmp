@@ -6,6 +6,7 @@ set(OLLAMA_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../ollama")
 
 include(CheckLanguage)
 include(GNUInstallDirs)
+include(FetchContent)
 find_package(Threads REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -36,14 +37,44 @@ set(GGML_VERSION "${GGML_VERSION_MAJOR}.${GGML_VERSION_MINOR}.${GGML_VERSION_PAT
 
 add_compile_definitions(NDEBUG GGML_VERSION=0x0 GGML_COMMIT=0x0)
 
-set(GGML_INCLUDE_DIRS
-    ${OLLAMA_ROOT}/ml/backend/ggml/ggml/src
-    ${OLLAMA_ROOT}/ml/backend/ggml/ggml/src/include
-    ${OLLAMA_ROOT}/ml/backend/ggml/ggml/src/ggml-cpu
-    ${OLLAMA_ROOT}/ml/backend/ggml/ggml/src/ggml-cpu/amx
+# ggml's C/C++ source is no longer vendored inside the ollama submodule -
+# ollama/llama/server/CMakeLists.txt fetches it via FetchContent at the tag
+# pinned by LLAMA_CPP_VERSION. Mirror that here so the ggml version used for
+# this build always matches the pinned ollama submodule.
+file(READ "${OLLAMA_ROOT}/LLAMA_CPP_VERSION" LLAMA_CPP_GIT_TAG)
+string(STRIP "${LLAMA_CPP_GIT_TAG}" LLAMA_CPP_GIT_TAG)
+
+# Share one checkout across all ABI/build-type configures instead of letting
+# each cmake process (AGP runs them in parallel) clone llama.cpp separately.
+set(FETCHCONTENT_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/_deps" CACHE PATH "" FORCE)
+file(MAKE_DIRECTORY "${FETCHCONTENT_BASE_DIR}")
+
+FetchContent_Declare(
+    llama_cpp
+    GIT_REPOSITORY "https://github.com/ggml-org/llama.cpp.git"
+    GIT_TAG ${LLAMA_CPP_GIT_TAG}
+    GIT_SHALLOW TRUE
 )
 
-add_subdirectory(${OLLAMA_ROOT}/ml/backend/ggml/ggml/src ggml-src)
+# Serialize the populate step across the parallel cmake processes so they
+# don't race on the same FETCHCONTENT_BASE_DIR subbuild directory.
+file(LOCK "${FETCHCONTENT_BASE_DIR}/llama_cpp.lock")
+FetchContent_GetProperties(llama_cpp)
+if(NOT llama_cpp_POPULATED)
+    FetchContent_Populate(llama_cpp)
+endif()
+file(LOCK "${FETCHCONTENT_BASE_DIR}/llama_cpp.lock" RELEASE)
+
+set(GGML_ROOT "${llama_cpp_SOURCE_DIR}/ggml")
+
+set(GGML_INCLUDE_DIRS
+    ${GGML_ROOT}/src
+    ${GGML_ROOT}/src/include
+    ${GGML_ROOT}/src/ggml-cpu
+    ${GGML_ROOT}/src/ggml-cpu/amx
+)
+
+add_subdirectory(${GGML_ROOT}/src ggml-src)
 
 set_property(TARGET ggml PROPERTY EXCLUDE_FROM_ALL TRUE)
 
