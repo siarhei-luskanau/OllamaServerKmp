@@ -43,6 +43,7 @@ jobs:
 
 
   Tests:
+    needs: [ Android, iOS ]
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
     strategy:
@@ -104,6 +105,7 @@ jobs:
 
 
   VerifyScreenshotMatrixSetup:
+    needs: [ Android, iOS ]
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
@@ -153,6 +155,7 @@ jobs:
 
 
   Android:
+    needs: Lint
     runs-on: ubuntu-latest
     steps:
 
@@ -172,6 +175,7 @@ jobs:
 
 
   iOS:
+    needs: Lint
     runs-on: macOS-26
     steps:
 
