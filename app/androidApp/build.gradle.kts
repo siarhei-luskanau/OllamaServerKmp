@@ -80,6 +80,7 @@ dependencies {
     debugImplementation(libs.androidx.uitest.testManifest)
     debugImplementation(libs.leakcanary.android)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.concurrent.futures)
     implementation(libs.androidx.datastore.core.okio)
     implementation(projects.diApp)
 }
